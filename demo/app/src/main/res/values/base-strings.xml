@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <string name="app_name">odembed</string>
+    <string name="app_name_classifier">cassifier</string>
+    <string name="app_name_detector">detector</string>
+
+</resources>
