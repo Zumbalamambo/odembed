@@ -70,7 +70,7 @@ public class BoxView extends View {
         String title = recog.getTitle();
         float confidence = recog.getConfidence();
         float x = recog.getLocation().left;
-        float y = max(recog.getLocation().top - 10, 0);
+        float y = max(recog.getLocation().top, 40);
         String combined = title + " " + confidence;
         canvas.drawText(combined, x, y, textPaint);
       }
