@@ -59,7 +59,7 @@ public class BoxView extends View {
   @Override
   public void onDraw(Canvas canvas) {
     if (recognitions != null) {
-      boxPaint.setStrokeWidth(2.0f);
+      boxPaint.setStrokeWidth(4.0f);
       boxPaint.setStyle(Paint.Style.STROKE);
 
       textPaint.setColor(Color.WHITE);
