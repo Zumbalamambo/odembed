@@ -33,5 +33,9 @@ public interface FrameInferencer {
   }
 
   FrameInferencerResult inferenceFrame(Bitmap bitmap);
+  String getModelFile();
+  String getLabelFile();
+  int getModelInputWidth();
+  int getModelInputHeight();
   void close();
 }

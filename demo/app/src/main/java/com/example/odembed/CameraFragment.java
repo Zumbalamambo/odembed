@@ -91,10 +91,23 @@ public class CameraFragment extends Fragment
   }
 
   private CameraMode cameraMode;
+  private String modelFile;
+  private String labelFile;
+  private int modelInputWidth;
+  private int modelInputHeight;
 
-  public static CameraFragment newInstance(CameraMode mode) {
+  public static CameraFragment newInstance(
+      CameraMode mode,
+      String modelFile,
+      String labelFile,
+      int modelInputWidth,
+      int modelInputHeight) {
     CameraFragment theInstance = new CameraFragment();
     theInstance.cameraMode = mode;
+    theInstance.modelFile = modelFile;
+    theInstance.labelFile = labelFile;
+    theInstance.modelInputWidth = modelInputWidth;
+    theInstance.modelInputHeight = modelInputHeight;
     return theInstance;
   }
 
@@ -116,14 +129,16 @@ public class CameraFragment extends Fragment
     super.onActivityCreated(savedInstanceState);
     if (cameraMode == CameraMode.CLASSIFIER) {
       try {
-        inferencer = new ImageClassifier(getActivity());
+        inferencer = new ImageClassifier(
+            getActivity(), modelFile, labelFile, modelInputWidth, modelInputHeight);
       } catch (IOException e) {
         Log.e(TAG, "Failed to initialize an image classifier.");
       }
     }
     else if (cameraMode == CameraMode.DETECTOR) {
       try {
-        inferencer = new ObjectDetector(getActivity());
+        inferencer = new ObjectDetector(
+            getActivity(), modelFile, labelFile, modelInputWidth, modelInputHeight);
       } catch (IOException e) {
         Log.e(TAG, "Failed to initialize an object detector.");
       }
@@ -596,8 +611,8 @@ public class CameraFragment extends Fragment
           new RectF(
               0,
               0,
-              ObjectDetector.MODEL_INPUT_SIZE_WIDTH,
-              ObjectDetector.MODEL_INPUT_SIZE_HEIGHT);
+              inferencer.getModelInputWidth(),
+              inferencer.getModelInputHeight());
 
       // Attention: the bitmap fed into CNN is sampled from TextureView, NOT from camera preview!
       cropToViewMatrix.setRectToRect(detectRect, viewRect, Matrix.ScaleToFit.FILL);
@@ -609,33 +624,27 @@ public class CameraFragment extends Fragment
       showToast("Uninitialized inferencer or invalid context.");
       return;
     }
-    Bitmap bitmap;
+
+    Bitmap bitmap = textureView.getBitmap(inferencer.getModelInputWidth(), inferencer.getModelInputHeight());
+    if (debug)
+      ImageUtils.saveBitmap(bitmap);
+
+    long start = SystemClock.uptimeMillis();
+    FrameInferencer.FrameInferencerResult result = inferencer.inferenceFrame(bitmap);
+    long end = SystemClock.uptimeMillis();
+
     if (cameraMode == CameraMode.CLASSIFIER) {
-      bitmap = textureView.getBitmap(
-              ImageClassifier.DIM_IMG_SIZE_X, ImageClassifier.DIM_IMG_SIZE_Y);
-      long start = SystemClock.uptimeMillis();
-      FrameInferencer.FrameInferencerResult result = inferencer.inferenceFrame(bitmap);
-      long end = SystemClock.uptimeMillis();
       StringBuilder stringBuilder = new StringBuilder();
       for (Recognition recog: result.getRecognitions()) {
         stringBuilder
-            .append(recog.getTitle()).append(": ").append(recog.getConfidence()).append("ms\n");
+            .append(recog.getTitle()).append(": ").append(recog.getConfidence()).append("\n");
       }
       showToast(
           stringBuilder.toString() +
           "Inference: " + (end - start) + "ms\n" +
           result.getInfrenceMessage());
-      bitmap.recycle();
     }
     else if (cameraMode == CameraMode.DETECTOR) {
-      bitmap = textureView.getBitmap(
-          ObjectDetector.MODEL_INPUT_SIZE_WIDTH, ObjectDetector.MODEL_INPUT_SIZE_HEIGHT);
-      if (debug)
-        ImageUtils.saveBitmap(bitmap);
-
-      long start = SystemClock.uptimeMillis();
-      FrameInferencer.FrameInferencerResult result = inferencer.inferenceFrame(bitmap);
-      long end = SystemClock.uptimeMillis();
       showToast("Inference: " + (end - start) + "ms\n" + result.getInfrenceMessage());
 
       List<Recognition> recognitions = result.getRecognitions();
@@ -649,10 +658,11 @@ public class CameraFragment extends Fragment
           mappedRecognitions.add(recog);
         }
       }
-      bitmap.recycle();
-
       boxView.drawRecognition(mappedRecognitions);
     }
+
+    bitmap.recycle();
+
   }
 
   private static class CompareSizesByArea implements Comparator<Size> {

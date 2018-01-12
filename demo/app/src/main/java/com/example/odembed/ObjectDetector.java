@@ -23,10 +23,10 @@ import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 public class ObjectDetector implements FrameInferencer {
   private static final String TAG = "ObjectDetector";
   private static final int MAX_RESULTS = 100;
-  private static final String MODEL_PATH = "ssd_mobilenet_v1_android_export.pb";
-  private static final String LABEL_PATH = "coco_labels_list.txt";
-  public static final int MODEL_INPUT_SIZE_WIDTH = 300;
-  public static final int MODEL_INPUT_SIZE_HEIGHT = 300;
+  private String modelFile;
+  private String labelFile;
+  private int modelInputWidth;
+  private int modelInputHeight;
 
   private String inputName;
 
@@ -44,10 +44,19 @@ public class ObjectDetector implements FrameInferencer {
 
   private TensorFlowInferenceInterface inferenceInterface;
 
-  public ObjectDetector(Activity activity) throws IOException {
+  public ObjectDetector(
+      Activity activity,
+      String modelFile,
+      String labelFile,
+      int modelInputWidth,
+      int modelInputHeight) throws IOException {
+    this.modelFile = modelFile;
+    this.labelFile = labelFile;
+    this.modelInputWidth = modelInputWidth;
+    this.modelInputHeight = modelInputHeight;
     AssetManager assetManager = activity.getAssets();
     InputStream labelsInput = null;
-    labelsInput = assetManager.open(LABEL_PATH);
+    labelsInput = assetManager.open(labelFile);
     BufferedReader br = null;
     br = new BufferedReader(new InputStreamReader(labelsInput));
     String line;
@@ -56,7 +65,7 @@ public class ObjectDetector implements FrameInferencer {
     }
     br.close();
 
-    inferenceInterface = new TensorFlowInferenceInterface(assetManager, MODEL_PATH);
+    inferenceInterface = new TensorFlowInferenceInterface(assetManager, modelFile);
 
     final Graph g = inferenceInterface.graph();
 
@@ -84,12 +93,32 @@ public class ObjectDetector implements FrameInferencer {
     // Pre-allocate buffers.
     outputNames = new String[] {"detection_boxes", "detection_scores",
             "detection_classes", "num_detections"};
-    intValues = new int[MODEL_INPUT_SIZE_HEIGHT * MODEL_INPUT_SIZE_WIDTH];
-    byteValues = new byte[MODEL_INPUT_SIZE_HEIGHT * MODEL_INPUT_SIZE_WIDTH * 3];
+    intValues = new int[modelInputHeight * modelInputWidth];
+    byteValues = new byte[modelInputHeight * modelInputWidth * 3];
     outputScores = new float[MAX_RESULTS];
     outputLocations = new float[MAX_RESULTS * 4];
     outputClasses = new float[MAX_RESULTS];
     outputNumDetections = new float[1];
+  }
+
+  @Override
+  public String getModelFile() {
+    return modelFile;
+  }
+
+  @Override
+  public String getLabelFile() {
+    return labelFile;
+  }
+
+  @Override
+  public int getModelInputWidth() {
+    return modelInputWidth;
+  }
+
+  @Override
+  public int getModelInputHeight() {
+    return modelInputHeight;
   }
 
   @Override
@@ -114,7 +143,7 @@ public class ObjectDetector implements FrameInferencer {
 
     // Copy the input data into TensorFlow.
     long startFeed = SystemClock.uptimeMillis();
-    inferenceInterface.feed(inputName, byteValues, 1, MODEL_INPUT_SIZE_WIDTH, MODEL_INPUT_SIZE_HEIGHT, 3);
+    inferenceInterface.feed(inputName, byteValues, 1, modelInputWidth, modelInputHeight, 3);
     long feedTime = SystemClock.uptimeMillis() - startFeed;
 
     // Run the inference call.
@@ -156,10 +185,10 @@ public class ObjectDetector implements FrameInferencer {
     for (int i = 0; i < outputScores.length; ++i) {
       final RectF detection =
         new RectF(
-                outputLocations[4 * i + 1] * MODEL_INPUT_SIZE_WIDTH,
-                outputLocations[4 * i] * MODEL_INPUT_SIZE_WIDTH,
-                outputLocations[4 * i + 3] * MODEL_INPUT_SIZE_WIDTH,
-                outputLocations[4 * i + 2] * MODEL_INPUT_SIZE_WIDTH);
+                outputLocations[4 * i + 1] * modelInputWidth,
+                outputLocations[4 * i] * modelInputWidth,
+                outputLocations[4 * i + 3] * modelInputWidth,
+                outputLocations[4 * i + 2] * modelInputWidth);
       pq.add(
           new Recognition("" + i, labels.get((int) outputClasses[i]), outputScores[i], detection));
     }

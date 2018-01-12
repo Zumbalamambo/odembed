@@ -26,17 +26,17 @@ import org.tensorflow.lite.Interpreter;
 public class ImageClassifier implements FrameInferencer {
   private static final String TAG = "odembed";
 
-  private static final String MODEL_PATH = "mobilenet_quant_v1_224.tflite";
-  private static final String LABEL_PATH = "labels.txt";
   private static final int MAX_RESULTS = 3;
   private static final int DIM_BATCH_SIZE = 1;
   private static final int DIM_PIXEL_CHANNEL = 3;
 
-  static final int DIM_IMG_SIZE_X = 224;
-  static final int DIM_IMG_SIZE_Y = 224;
+  private String modelFile;
+  private String labelFile;
+  private int modelInputWidth;
+  private int modelInputHeight;
 
   // 3-channel char converted to a single int
-  private int[] intValues = new int[DIM_IMG_SIZE_X * DIM_IMG_SIZE_Y];
+  private int[] intValues;
   private Interpreter tflite;
   private List<String> labelList;
 
@@ -53,14 +53,24 @@ public class ImageClassifier implements FrameInferencer {
         }
       });
 
-  ImageClassifier(Activity activity) throws IOException {
+  ImageClassifier(
+      Activity activity,
+      String modelFile,
+      String labelFile,
+      int modelInputWidth,
+      int modelInputHeight) throws IOException {
+    this.modelFile = modelFile;
+    this.labelFile = labelFile;
+    this.modelInputWidth = modelInputWidth;
+    this.modelInputHeight = modelInputHeight;
     tflite = new Interpreter(loadModelFile(activity));
     labelList = loadLabelList(activity);
+    intValues = new int[modelInputWidth * modelInputHeight];
     imgInput = ByteBuffer.allocateDirect(
-            DIM_BATCH_SIZE * DIM_IMG_SIZE_Y * DIM_IMG_SIZE_X * DIM_PIXEL_CHANNEL);
+            DIM_BATCH_SIZE * modelInputWidth * modelInputHeight * DIM_PIXEL_CHANNEL);
     imgInput.order(ByteOrder.nativeOrder());
     labelOutput = new byte[1][labelList.size()];
-    Log.d(TAG, "Created a Tensorflow Lite Image Classifier.");
+    Log.d(TAG, "Created a image classifier.");
   }
 
   public FrameInferencerResult inferenceFrame(Bitmap bitmap) {
@@ -81,6 +91,26 @@ public class ImageClassifier implements FrameInferencer {
   }
 
   @Override
+  public String getModelFile() {
+    return modelFile;
+  }
+
+  @Override
+  public String getLabelFile() {
+    return labelFile;
+  }
+
+  @Override
+  public int getModelInputWidth() {
+    return modelInputWidth;
+  }
+
+  @Override
+  public int getModelInputHeight() {
+    return modelInputHeight;
+  }
+
+  @Override
   public void close() {
     tflite.close();
     tflite = null;
@@ -90,7 +120,7 @@ public class ImageClassifier implements FrameInferencer {
   private List<String> loadLabelList(Activity activity) throws IOException {
     List<String> labelList = new ArrayList<String>();
     BufferedReader reader =
-        new BufferedReader(new InputStreamReader(activity.getAssets().open(LABEL_PATH)));
+        new BufferedReader(new InputStreamReader(activity.getAssets().open(labelFile)));
     String line;
     while ((line = reader.readLine()) != null) {
       labelList.add(line);
@@ -101,7 +131,7 @@ public class ImageClassifier implements FrameInferencer {
 
   /** Memory-map the model file in Assets. */
   private MappedByteBuffer loadModelFile(Activity activity) throws IOException {
-    AssetFileDescriptor fileDescriptor = activity.getAssets().openFd(MODEL_PATH);
+    AssetFileDescriptor fileDescriptor = activity.getAssets().openFd(modelFile);
     FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
     FileChannel fileChannel = inputStream.getChannel();
     long startOffset = fileDescriptor.getStartOffset();
@@ -118,8 +148,8 @@ public class ImageClassifier implements FrameInferencer {
     bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
     // Convert the image to floating point.
     int pixel = 0;
-    for (int i = 0; i < DIM_IMG_SIZE_X; ++i) {
-      for (int j = 0; j < DIM_IMG_SIZE_Y; ++j) {
+    for (int i = 0; i < modelInputWidth; ++i) {
+      for (int j = 0; j < modelInputHeight; ++j) {
         final int val = intValues[pixel++];
         imgInput.put((byte) ((val >> 16) & 0xFF)); // R in least significant byte
         imgInput.put((byte) ((val >> 8) & 0xFF));

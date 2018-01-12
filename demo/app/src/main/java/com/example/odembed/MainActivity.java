@@ -8,7 +8,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +27,8 @@ public class MainActivity extends AppCompatActivity {
 
     String[] models = new String[] {
         "mobilenet_quant_v1_224.tflite",
-        "ssd_mobilenet_v1_android_export.pb"
+        "ssd_mobilenet_v1_android_export.pb",
+        "ssd_mobilenet_v1_coco_2017_11_17.pb"
     };
 
     List<String> modelList = new ArrayList<String>(Arrays.asList(models));
@@ -43,9 +43,26 @@ public class MainActivity extends AppCompatActivity {
       public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         String selectedItem = (String) parent.getItemAtPosition(position);
         if (selectedItem.equals("mobilenet_quant_v1_224.tflite")) {
-          startActivity(new Intent(MainActivity.this, ClassifierActivity.class));
+          Intent intent = new Intent(MainActivity.this, ClassifierActivity.class);
+          intent.putExtra("modelFile","mobilenet_quant_v1_224.tflite");
+          intent.putExtra("labelFile", "imagenet_labels_list.txt");
+          intent.putExtra("modelInputWidth", 224);
+          intent.putExtra("modelInputHeight", 224);
+          startActivity(intent);
         } else if (selectedItem.equals("ssd_mobilenet_v1_android_export.pb")) {
-          startActivity(new Intent(MainActivity.this, DetectorActivity.class));
+          Intent intent = new Intent(MainActivity.this, DetectorActivity.class);
+          intent.putExtra("modelFile","ssd_mobilenet_v1_android_export.pb");
+          intent.putExtra("labelFile","coco_labels_list.txt");
+          intent.putExtra("modelInputWidth", 300);
+          intent.putExtra("modelInputHeight", 300);
+          startActivity(intent);
+        } else if (selectedItem.equals("ssd_mobilenet_v1_coco_2017_11_17.pb")) {
+          Intent intent = new Intent(MainActivity.this, DetectorActivity.class);
+          intent.putExtra("modelFile","ssd_mobilenet_v1_coco_2017_11_17.pb");
+          intent.putExtra("labelFile","coco_labels_list.txt");
+          intent.putExtra("modelInputWidth", 300);
+          intent.putExtra("modelInputHeight", 300);
+          startActivity(intent);
         } else {
           Log.e(TAG, "Unrecognized item: " + selectedItem + " at position: " + position);
         }
