@@ -11,6 +11,7 @@ import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -28,7 +29,8 @@ public class MainActivity extends AppCompatActivity {
     String[] models = new String[] {
         "mobilenet_quant_v1_224.tflite",
         "ssd_mobilenet_v1_android_export.pb",
-        "ssd_mobilenet_v1_coco_2017_11_17.pb"
+        "ssd_mobilenet_v1_coco_2017_11_17.pb",
+        "ssd_mobilenet_face.pb"
     };
 
     List<String> modelList = new ArrayList<String>(Arrays.asList(models));
@@ -62,6 +64,16 @@ public class MainActivity extends AppCompatActivity {
           intent.putExtra("labelFile","coco_labels_list.txt");
           intent.putExtra("modelInputWidth", 300);
           intent.putExtra("modelInputHeight", 300);
+          startActivity(intent);
+        } else if (selectedItem.equals("ssd_mobilenet_face.pb")) {
+          Intent intent = new Intent(MainActivity.this, DetectorActivity.class);
+          intent.putExtra("modelFile","ssd_mobilenet_face.pb");
+          intent.putExtra("labelFile","face_labels_list.txt");
+          intent.putExtra("modelInputWidth", 300);
+          intent.putExtra("modelInputHeight", 300);
+          HashMap<String, String> hashMap = new HashMap<String, String>();
+          hashMap.put("useFrontCamera", "true");
+          intent.putExtra("extraParams", hashMap);
           startActivity(intent);
         } else {
           Log.e(TAG, "Unrecognized item: " + selectedItem + " at position: " + position);

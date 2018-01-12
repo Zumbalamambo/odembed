@@ -95,19 +95,23 @@ public class CameraFragment extends Fragment
   private String labelFile;
   private int modelInputWidth;
   private int modelInputHeight;
+  private boolean useFrontCamera = false;
 
   public static CameraFragment newInstance(
       CameraMode mode,
       String modelFile,
       String labelFile,
       int modelInputWidth,
-      int modelInputHeight) {
+      int modelInputHeight,
+      boolean useFrontCamera) {
     CameraFragment theInstance = new CameraFragment();
     theInstance.cameraMode = mode;
     theInstance.modelFile = modelFile;
     theInstance.labelFile = labelFile;
     theInstance.modelInputWidth = modelInputWidth;
     theInstance.modelInputHeight = modelInputHeight;
+    theInstance.useFrontCamera = useFrontCamera;
+
     return theInstance;
   }
 
@@ -271,9 +275,12 @@ public class CameraFragment extends Fragment
       for (String cameraId : manager.getCameraIdList()) {
         CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 
-        // We don't use a front facing camera in this sample.
         Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-        if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+        if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT && !useFrontCamera) {
+          continue;
+        }
+
+        if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK && useFrontCamera) {
           continue;
         }
 

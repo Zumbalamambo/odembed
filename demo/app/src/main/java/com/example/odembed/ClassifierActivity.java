@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
+import java.util.HashMap;
+
 public class ClassifierActivity extends Activity {
 
   @Override
@@ -15,6 +17,13 @@ public class ClassifierActivity extends Activity {
     String labelFile = intent.getStringExtra("labelFile");
     int modelInputWidth = intent.getIntExtra("modelInputWidth", 0);
     int modelInputHeight = intent.getIntExtra("modelInputHeight", 0);
+
+    boolean useFrontCamera = false;
+    HashMap<String, String> hashMap = (HashMap<String, String>)intent.getSerializableExtra("extraParams");
+    if (hashMap != null && hashMap.get("useFrontCamera").equals("true")) {
+      useFrontCamera = true;
+    }
+
     if (null == savedInstanceState) {
       getFragmentManager()
         .beginTransaction()
@@ -25,7 +34,8 @@ public class ClassifierActivity extends Activity {
             modelFile,
             labelFile,
             modelInputWidth,
-            modelInputHeight)
+            modelInputHeight,
+            useFrontCamera)
         )
         .commit();
     }
