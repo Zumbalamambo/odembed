@@ -209,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
         R.drawable.ic_model,
         DetectorActivity.class,
         "coco detector",
-        "mobilenet ssd coco detector, TF Mobile, 300x300, transfer learning on coco",
+        "mobilenet ssd coco detector, TF Mobile, 300x300, transfer learning on coco, old",
         "ssd_mobilenet_v1_android_export.pb",
         "coco_labels_list.txt",
         300,
@@ -239,6 +239,18 @@ public class MainActivity extends AppCompatActivity {
         300,
         300
         ));
+    modelList.add(
+      new Model(
+        5,
+        R.drawable.ic_model,
+        PhotoDetectorActivity.class,
+        "coco detector(no camera)",
+        "mobilenet ssd coco detector, TF Mobile, 300x300, transfer learning on coco, using sample images",
+        "ssd_mobilenet_v1_coco_2017_11_17.pb",
+        "coco_labels_list.txt",
+        300,
+        300
+      ));
 
     ListView lv = (ListView) findViewById(R.id.listView);
 
