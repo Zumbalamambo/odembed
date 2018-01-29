@@ -32,6 +32,9 @@
         <activity
             android:name=".PhotoDetectorActivity"
             android:label="@string/title_activity_photo_detector"></activity>
+        <activity
+            android:name=".PhotoClassifierActivity"
+            android:label="@string/title_activity_photo_classifier"></activity>
     </application>
 
 </manifest>

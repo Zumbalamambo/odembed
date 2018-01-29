@@ -37,5 +37,6 @@ public interface FrameInferencer {
   String getLabelFile();
   int getModelInputWidth();
   int getModelInputHeight();
+  void useNNAPI(boolean nnapi);
   void close();
 }

@@ -251,6 +251,18 @@ public class MainActivity extends AppCompatActivity {
         300,
         300
       ));
+    modelList.add(
+      new Model(
+        6,
+        R.drawable.ic_model,
+        PhotoClassifierActivity.class,
+        "imagenet classifier(no camera)",
+        "mobilenet imagenet classifier, TF Lite, quantized, 224x224",
+        "mobilenet_quant_v1_224.tflite",
+        "imagenet_labels_list.txt",
+        224,
+        224
+      ));
 
     ListView lv = (ListView) findViewById(R.id.listView);
 

@@ -64,7 +64,6 @@ public class ImageClassifier implements FrameInferencer {
     this.modelInputWidth = modelInputWidth;
     this.modelInputHeight = modelInputHeight;
     tflite = new Interpreter(loadModelFile(activity));
-    tflite.setUseNNAPI(true);
     labelList = loadLabelList(activity);
     intValues = new int[modelInputWidth * modelInputHeight];
     imgInput = ByteBuffer.allocateDirect(
@@ -109,6 +108,11 @@ public class ImageClassifier implements FrameInferencer {
   @Override
   public int getModelInputHeight() {
     return modelInputHeight;
+  }
+
+  @Override
+  public void useNNAPI(boolean nnapi) {
+    tflite.setUseNNAPI(nnapi);
   }
 
   @Override

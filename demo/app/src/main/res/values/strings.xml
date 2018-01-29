@@ -4,4 +4,5 @@
     <string name="camera_error">This device doesn\'t support Camera2 API.</string>
     <string name="title_activity_main">Demos</string>
     <string name="title_activity_photo_detector">Photo Detector</string>
+    <string name="title_activity_photo_classifier">Photo Classifier</string>
 </resources>

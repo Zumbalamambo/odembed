@@ -201,6 +201,9 @@ public class ObjectDetector implements FrameInferencer {
   }
 
   @Override
+  public void useNNAPI(boolean nnapi) {}
+
+  @Override
   public void close() {
     inferenceInterface.close();
   }
