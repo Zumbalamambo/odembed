@@ -24,17 +24,21 @@
         <activity
             android:name=".ClassifierActivity"
             android:label="@string/app_name_classifier"
-            android:theme="@style/MaterialTheme"></activity>
+            android:theme="@style/MaterialTheme" />
         <activity
             android:name=".DetectorActivity"
             android:label="@string/app_name_detector"
-            android:theme="@style/MaterialTheme"></activity>
+            android:theme="@style/MaterialTheme" />
         <activity
             android:name=".PhotoDetectorActivity"
-            android:label="@string/title_activity_photo_detector"></activity>
+            android:label="@string/title_activity_photo_detector" />
         <activity
             android:name=".PhotoClassifierActivity"
-            android:label="@string/title_activity_photo_classifier"></activity>
+            android:label="@string/title_activity_photo_classifier" />
+        <activity
+            android:name=".FaceActivity"
+            android:label="@string/app_name_face"
+            android:theme="@style/MaterialTheme"/>
     </application>
 
 </manifest>

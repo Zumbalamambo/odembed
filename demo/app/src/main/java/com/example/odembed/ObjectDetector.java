@@ -30,7 +30,6 @@ public class ObjectDetector implements FrameInferencer {
 
   private String inputName;
 
-  // Pre-allocated buffers.
   private Vector<String> labels = new Vector<String>();
   private int[] intValues;
   private byte[] byteValues;
@@ -70,8 +69,6 @@ public class ObjectDetector implements FrameInferencer {
     final Graph g = inferenceInterface.graph();
 
     inputName = "image_tensor";
-    // inputName node shape: NHWC
-    // C == 3, RGB
     final Operation inputOp = g.operation(inputName);
     if (inputOp == null) {
       throw new RuntimeException("Failed to find input Node '" + inputName + "'");
@@ -90,7 +87,6 @@ public class ObjectDetector implements FrameInferencer {
       throw new RuntimeException("Failed to find output Node 'detection_classes'");
     }
 
-    // Pre-allocate buffers.
     outputNames = new String[] {"detection_boxes", "detection_scores",
             "detection_classes", "num_detections"};
     intValues = new int[modelInputHeight * modelInputWidth];
@@ -141,15 +137,10 @@ public class ObjectDetector implements FrameInferencer {
     }
     long preprocessImageTime = SystemClock.uptimeMillis() - start;
 
-    // Copy the input data into TensorFlow.
     long startFeed = SystemClock.uptimeMillis();
     inferenceInterface.feed(inputName, byteValues, 1, modelInputWidth, modelInputHeight, 3);
-    long feedTime = SystemClock.uptimeMillis() - startFeed;
-
-    // Run the inference call.
-    long startRun = SystemClock.uptimeMillis();
     inferenceInterface.run(outputNames, logStats);
-    long runTime = SystemClock.uptimeMillis() - startRun;
+    long runTime = SystemClock.uptimeMillis() - startFeed;
 
     // Copy the output Tensor back into the output array.
     long startFetch = SystemClock.uptimeMillis();
@@ -161,13 +152,9 @@ public class ObjectDetector implements FrameInferencer {
     inferenceInterface.fetch(outputNames[1], outputScores);
     inferenceInterface.fetch(outputNames[2], outputClasses);
     inferenceInterface.fetch(outputNames[3], outputNumDetections);
-    long fetchTime = SystemClock.uptimeMillis() - startFetch;
 
-    StringBuilder sb = new StringBuilder();
-    sb.append("preprocess: ").append(preprocessImageTime).append("ms\n")
-        .append("feed: ").append(feedTime).append("ms\n")
-        .append("run: ").append(runTime).append("ms\n")
-        .append("fetch: ").append(fetchTime).append("ms\n");
+    String timeInfo = "detector preprocess: " + preprocessImageTime + "ms\n"
+        + "detector run: " + runTime + "ms\n";
 
     // Find the best detections.
     final PriorityQueue<Recognition> pq =
@@ -197,7 +184,7 @@ public class ObjectDetector implements FrameInferencer {
     for (int i = 0; i < Math.min(pq.size(), MAX_RESULTS); ++i) {
       recognitions.add(pq.poll());
     }
-    return new FrameInferencerResult(recognitions, sb.toString());
+    return new FrameInferencerResult(recognitions, timeInfo);
   }
 
   @Override

@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -263,6 +262,19 @@ public class MainActivity extends AppCompatActivity {
         224,
         224
       ));
+    modelList.add(
+      new Model(
+        7,
+        R.drawable.ic_model,
+        FaceActivity.class,
+        "face recognition",
+        "facenet on inception resnet v1, TF Mobile",
+        //"facenet_inception_resnet_v1.pb",
+        "facenet.pb",
+        "notused.txt",
+        160,
+        160
+      ));
 
     ListView lv = (ListView) findViewById(R.id.listView);
 
@@ -281,7 +293,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("modelInputWidth", model.getModelInputWidth());
         intent.putExtra("modelInputHeight", model.getModelInputHeight());
 
-        if (modelId == 4) {
+        if (modelId == 4 || modelId == 7) {
           HashMap<String, String> hashMap = new HashMap<String, String>();
           hashMap.put("useFrontCamera", "true");
           intent.putExtra("extraParams", hashMap);

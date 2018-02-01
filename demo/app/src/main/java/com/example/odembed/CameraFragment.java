@@ -88,6 +88,7 @@ public class CameraFragment extends Fragment
   public enum CameraMode {
     CLASSIFIER,
     DETECTOR,
+    FACE
   }
 
   private CameraMode cameraMode;
@@ -145,6 +146,14 @@ public class CameraFragment extends Fragment
             getActivity(), modelFile, labelFile, modelInputWidth, modelInputHeight);
       } catch (IOException e) {
         Log.e(TAG, "Failed to initialize an object detector.");
+      }
+    }
+    else if (cameraMode == CameraMode.FACE) {
+      try {
+        inferencer = new FaceRecognizer(
+          getActivity(), modelFile, labelFile, modelInputWidth, modelInputHeight);
+      } catch (IOException e) {
+        Log.e(TAG, "Failed to initialize an face recgonizer.");
       }
     }
     startBackgroundThread();
@@ -613,7 +622,7 @@ public class CameraFragment extends Fragment
     }
     textureView.setTransform(matrix);
 
-    if (cameraMode == CameraMode.DETECTOR) {
+    if (cameraMode == CameraMode.DETECTOR || cameraMode == CameraMode.FACE) {
       RectF detectRect =
           new RectF(
               0,
@@ -632,6 +641,7 @@ public class CameraFragment extends Fragment
       return;
     }
 
+    // This bitmap has been scaled
     Bitmap bitmap = textureView.getBitmap(inferencer.getModelInputWidth(), inferencer.getModelInputHeight());
     if (debug)
       ImageUtils.saveBitmap(bitmap);
@@ -652,6 +662,22 @@ public class CameraFragment extends Fragment
           result.getInfrenceMessage());
     }
     else if (cameraMode == CameraMode.DETECTOR) {
+      showToast("Inference: " + (end - start) + "ms\n" + result.getInfrenceMessage());
+
+      List<Recognition> recognitions = result.getRecognitions();
+      final List<Recognition> mappedRecognitions = new LinkedList<Recognition>();
+
+      for (final Recognition recog : recognitions) {
+        final RectF location = recog.getLocation();
+        if (location != null && recog.getConfidence() >= MINIMUM_DETECTION_CONFIDENCE) {
+          cropToViewMatrix.mapRect(location);
+          recog.setLocation(location);
+          mappedRecognitions.add(recog);
+        }
+      }
+      boxView.drawRecognition(mappedRecognitions);
+    }
+    else if (cameraMode == CameraMode.FACE) {
       showToast("Inference: " + (end - start) + "ms\n" + result.getInfrenceMessage());
 
       List<Recognition> recognitions = result.getRecognitions();
