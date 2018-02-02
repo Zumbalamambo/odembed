@@ -24,7 +24,7 @@ public class FaceRecognizer extends ObjectDetector {
   private static final int IMAGE_MEAN = 117;
   private static final float IMAGE_STD = 1;
   private static final String INPUT_NAME = "input";
-  private static final String EMBEDDING_NAME = "embeddings";
+  private static final String EMBEDDING_NAME = "embedding";
   //private static final String PHASE_TRAIN = "phase_train";
   private static final float MINIMUM_DETECTION_CONFIDENCE = 0.6f;
 
@@ -168,7 +168,7 @@ public class FaceRecognizer extends ObjectDetector {
     for (float f : outputEmbeddings) {
       embeddingString += f + " ";
     }
-    Log.d(TAG, "embeddings: " + embeddingString);
+    Log.d(TAG, "embedding: " + embeddingString);
 
     return "hello Wayne";
   }
