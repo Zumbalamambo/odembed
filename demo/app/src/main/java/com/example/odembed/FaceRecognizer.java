@@ -7,14 +7,14 @@ import android.graphics.RectF;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.example.odembed.utils.ImageUtils;
+
 import org.tensorflow.Graph;
 import org.tensorflow.Operation;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.Vector;
 
 // TF Mobile interface, in libtensorflow_inference.so

@@ -1,8 +1,10 @@
-package com.example.odembed;
+package com.example.odembed.ui;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+
+import com.example.odembed.R;
 
 import java.util.HashMap;
 

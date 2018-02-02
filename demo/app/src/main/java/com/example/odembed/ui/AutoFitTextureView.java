@@ -1,4 +1,4 @@
-package com.example.odembed;
+package com.example.odembed.ui;
 
 import android.content.Context;
 import android.util.AttributeSet;

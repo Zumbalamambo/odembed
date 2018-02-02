@@ -1,18 +1,18 @@
-package com.example.odembed;
+package com.example.odembed.ui;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.ArrayMap;
+
+import com.example.odembed.R;
 
 import java.util.HashMap;
-import java.util.Map;
 
-public class DetectorActivity extends Activity {
+public class FaceActivity extends Activity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_detect);
+    setContentView(R.layout.activity_face);
 
     Intent intent = getIntent();
     String modelFile = intent.getStringExtra("modelFile");
@@ -31,7 +31,7 @@ public class DetectorActivity extends Activity {
         .replace(
           R.id.container2,
           CameraFragment.newInstance(
-            CameraFragment.CameraMode.DETECTOR,
+            CameraFragment.CameraMode.FACE,
             modelFile,
             labelFile,
             modelInputWidth,

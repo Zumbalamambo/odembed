@@ -12,7 +12,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:label="@string/app_name"
             android:theme="@style/Theme.AppCompat">
             <intent-filter>
@@ -22,21 +22,21 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ClassifierActivity"
+            android:name=".ui.ClassifierActivity"
             android:label="@string/app_name_classifier"
             android:theme="@style/MaterialTheme" />
         <activity
-            android:name=".DetectorActivity"
+            android:name=".ui.DetectorActivity"
             android:label="@string/app_name_detector"
             android:theme="@style/MaterialTheme" />
         <activity
-            android:name=".PhotoDetectorActivity"
+            android:name=".ui.PhotoDetectorActivity"
             android:label="@string/title_activity_photo_detector" />
         <activity
-            android:name=".PhotoClassifierActivity"
+            android:name=".ui.PhotoClassifierActivity"
             android:label="@string/title_activity_photo_classifier" />
         <activity
-            android:name=".FaceActivity"
+            android:name=".ui.FaceActivity"
             android:label="@string/app_name_face"
             android:theme="@style/MaterialTheme"/>
     </application>

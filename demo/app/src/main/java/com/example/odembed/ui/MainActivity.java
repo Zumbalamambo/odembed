@@ -1,4 +1,4 @@
-package com.example.odembed;
+package com.example.odembed.ui;
 
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +12,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.example.odembed.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;

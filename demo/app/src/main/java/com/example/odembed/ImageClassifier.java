@@ -53,12 +53,12 @@ public class ImageClassifier implements FrameInferencer {
         }
       });
 
-  ImageClassifier(
-      Activity activity,
-      String modelFile,
-      String labelFile,
-      int modelInputWidth,
-      int modelInputHeight) throws IOException {
+  public ImageClassifier(
+    Activity activity,
+    String modelFile,
+    String labelFile,
+    int modelInputWidth,
+    int modelInputHeight) throws IOException {
     this.modelFile = modelFile;
     this.labelFile = labelFile;
     this.modelInputWidth = modelInputWidth;

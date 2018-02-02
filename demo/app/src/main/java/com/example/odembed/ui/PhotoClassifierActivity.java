@@ -1,32 +1,29 @@
-package com.example.odembed;
+package com.example.odembed.ui;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.RectF;
 import android.os.Bundle;
 import android.app.Activity;
 import android.os.CountDownTimer;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.example.odembed.FrameInferencer;
+import com.example.odembed.ImageClassifier;
+import com.example.odembed.R;
+import com.example.odembed.Recognition;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
 
-import static java.lang.Math.max;
 
-public class PhotoDetectorActivity extends Activity {
-  private static final String TAG = "PhotoDetectorActivity";
-  private static final float MINIMUM_DETECTION_CONFIDENCE = 0.6f;
+public class PhotoClassifierActivity extends Activity {
+  private static final String TAG = "PhotoClassifierActivity";
   private ImageView imageView;
   private TextView textView;
   private CountDownTimer countDownTimer;
@@ -36,11 +33,7 @@ public class PhotoDetectorActivity extends Activity {
   private int modelInputWidth;
   private int modelInputHeight;
   private FrameInferencer inferencer;
-  private Matrix cropToViewMatrix = new Matrix();
-  private RectF detectRect;
-  private Paint boxPaint = new Paint();
-  private Paint textPaint = new Paint();
-  private Random rand = new Random();
+  private boolean usingNNAPI = true;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +46,7 @@ public class PhotoDetectorActivity extends Activity {
     modelInputHeight = getIntent().getIntExtra("modelInputHeight", 0);
 
     imageView = (ImageView)findViewById(R.id.image_view);
-    textView = (TextView) findViewById(R.id.text_view);
+    textView = (TextView)findViewById(R.id.text_view);
 
     try {
       String[] images = getAssets().list("sample_images");
@@ -89,13 +82,12 @@ public class PhotoDetectorActivity extends Activity {
     };
 
     try {
-      inferencer = new ObjectDetector(
+      inferencer = new ImageClassifier(
         this, modelFile, labelFile, modelInputWidth, modelInputHeight);
     } catch (IOException e) {
       Log.e(TAG, "Failed to initialize an object detector.");
     }
 
-    detectRect = new RectF(0, 0, modelInputWidth, modelInputHeight);
   }
 
   @Override
@@ -118,50 +110,51 @@ public class PhotoDetectorActivity extends Activity {
     }
   }
 
+  // create action bar button
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    getMenuInflater().inflate(R.menu.menu_config, menu);
+    return super.onCreateOptionsMenu(menu);
+  }
+
+  @Override
+  public boolean onPrepareOptionsMenu(Menu menu) {
+    MenuItem nnapiItem = menu.findItem(R.id.nnapi);
+    nnapiItem.setChecked(usingNNAPI);
+    inferencer.useNNAPI(usingNNAPI);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    int id = item.getItemId();
+
+    if (id == R.id.nnapi) {
+      usingNNAPI = !item.isChecked();
+      item.setChecked(usingNNAPI);
+      inferencer.useNNAPI(usingNNAPI);
+    }
+    return super.onOptionsItemSelected(item);
+  }
+
   public void runInference(Bitmap bitmap) {
     Bitmap resized = Bitmap.createScaledBitmap(bitmap, modelInputWidth, modelInputHeight, true);
-
-    RectF originalRect = new RectF(0, 0, bitmap.getWidth(), bitmap.getHeight());
-    cropToViewMatrix.setRectToRect(detectRect, originalRect, Matrix.ScaleToFit.FILL);
 
     long start = SystemClock.uptimeMillis();
     FrameInferencer.FrameInferencerResult result = inferencer.inferenceFrame(resized);
     long end = SystemClock.uptimeMillis();
 
-    List<Recognition> recognitions = result.getRecognitions();
-    final List<Recognition> mappedRecognitions = new LinkedList<Recognition>();
-
-    for (final Recognition recog : recognitions) {
-      final RectF location = recog.getLocation();
-      if (location != null && recog.getConfidence() >= MINIMUM_DETECTION_CONFIDENCE) {
-        cropToViewMatrix.mapRect(location);
-        recog.setLocation(location);
-        mappedRecognitions.add(recog);
-      }
+    StringBuilder stringBuilder = new StringBuilder();
+    for (Recognition recog: result.getRecognitions()) {
+      stringBuilder
+        .append(recog.getTitle()).append(": ").append(recog.getConfidence()).append("\n");
     }
 
-    Bitmap bitmapWithBoxes = bitmap.copy(bitmap.getConfig(), true);
-    Canvas canvas = new Canvas(bitmapWithBoxes);
-
-    boxPaint.setStrokeWidth(1.0f);
-    boxPaint.setStyle(Paint.Style.STROKE);
-    textPaint.setColor(Color.WHITE);
-    textPaint.setTextSize(10);
-
-    for (Recognition recog : mappedRecognitions) {
-      boxPaint.setARGB(255, rand.nextInt(256), rand.nextInt(256), rand.nextInt(256));
-      canvas.drawRect(recog.getLocation(), boxPaint);
-      String title = recog.getTitle();
-      float confidence = recog.getConfidence();
-      float x = recog.getLocation().left;
-      float y = max(recog.getLocation().top, 40);
-      String combined = title + " " + confidence;
-      canvas.drawText(combined, x, y, textPaint);
-    }
-
-    String textToShow = "Inference: " + (end - start) + "ms\n" + result.getInfrenceMessage();
+    String textToShow = "Inference: " + (end - start) + "ms\n"
+      + stringBuilder.toString() + result.getInfrenceMessage();
     textView.setText(textToShow);
-    imageView.setImageBitmap(bitmapWithBoxes);
+    imageView.setImageBitmap(bitmap);
   }
 
 }
+

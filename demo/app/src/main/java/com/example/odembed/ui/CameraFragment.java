@@ -1,4 +1,4 @@
-package com.example.odembed;
+package com.example.odembed.ui;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -41,6 +41,14 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import com.example.odembed.FaceRecognizer;
+import com.example.odembed.FrameInferencer;
+import com.example.odembed.ImageClassifier;
+import com.example.odembed.ObjectDetector;
+import com.example.odembed.R;
+import com.example.odembed.Recognition;
+import com.example.odembed.utils.ImageUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
