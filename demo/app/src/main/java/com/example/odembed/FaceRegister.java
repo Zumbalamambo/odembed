@@ -8,41 +8,34 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import com.example.odembed.utils.DatabaseUtils;
-import com.example.odembed.utils.ImageUtils;
 
 import org.tensorflow.Graph;
 import org.tensorflow.Operation;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-// TF Mobile interface, in libtensorflow_inference.so
-
-public class FaceRecognizer extends ObjectDetector {
-  private static final String TAG = "FaceRecognizer";
+public class FaceRegister extends ObjectDetector {
+  private static final String TAG = "FaceRegister";
   private static final int IMAGE_MEAN = 117;
   private static final float IMAGE_STD = 1;
   private static final String INPUT_NAME = "input";
   private static final String EMBEDDING_NAME = "embeddings";
-  //private static final String PHASE_TRAIN = "phase_train";
-  private static final float MIN_DETECTION_CONFIDENCE = 0.6f;
-  private static final float MAX_SAME_PERSON_DISTANCE = 0.2f;
+  private static final float MINIMUM_DETECTION_CONFIDENCE = 0.6f;
 
-  private boolean debug = false;
-
+  private Activity activity;
   private String modelFile;
   private String labelFile;
   private int modelInputWidth;
   private int modelInputHeight;
+  private String registerName;
 
-  private ArrayList<FaceEmbedding> registeredEmbedding;
+  private Vector<String> labels = new Vector<String>();
   private int[] intValues;
   private float[] floatValues;
-  //private boolean[] phaseValues;
-  private float[] outputEmbedding;
+  private float[] outputEmbeddings;
   private long embeddingLength;
   private String[] outputNames;
 
@@ -51,25 +44,26 @@ public class FaceRecognizer extends ObjectDetector {
   private TensorFlowInferenceInterface inferenceInterface;
   private DatabaseUtils dbUtils;
 
-  public FaceRecognizer(
-      Activity activity,
-      String modelFile,
-      String labelFile,
-      int modelInputWidth,
-      int modelInputHeight) throws IOException {
+  public FaceRegister(
+    Activity activity,
+    String modelFile,
+    String labelFile,
+    int modelInputWidth,
+    int modelInputHeight,
+    String registerName) throws IOException {
     super(activity,
       "ssd_mobilenet_face.pb",
       "face_labels_list.txt",
       300,
       300);
+    this.activity = activity;
     this.modelFile = modelFile;
     this.labelFile = labelFile;
     this.modelInputWidth = modelInputWidth;
     this.modelInputHeight = modelInputHeight;
+    this.registerName = registerName;
 
     dbUtils = new DatabaseUtils(activity);
-    this.registeredEmbedding = dbUtils.getAllEmbeddings();
-
     AssetManager assetManager = activity.getAssets();
 
     inferenceInterface = new TensorFlowInferenceInterface(assetManager, modelFile);
@@ -91,19 +85,9 @@ public class FaceRecognizer extends ObjectDetector {
     embeddingLength = embeddingOp.output(0).shape().size(1);
     Log.d(TAG, "embeddingOp shape: " + embeddingLength);
 
-    // phase_train is boolean which TF Mobile doesn't support,use the freezed model from:
-    // https://github.com/apollo-time/facenet/blob/master/model/resnet/facenet.pb
-    // where we don't need to feed phase_train
-//    Operation phaseOp = g.operation(PHASE_TRAIN);
-//    if (phaseOp == null) {
-//      throw new RuntimeException("Failed to find input Node '" + PHASE_TRAIN + "'");
-//    }
-//    Log.d(TAG, "phase train op shape: " + phaseOp.output(0).shape());
-
     outputNames = new String[] {EMBEDDING_NAME};
     intValues = new int[modelInputHeight * modelInputWidth];
-    floatValues = new float[modelInputHeight * modelInputWidth * 3];
-    //phaseValues = new boolean[] {false};
+    floatValues = new float[modelInputHeight * modelInputWidth *3];
   }
 
   @Override
@@ -128,7 +112,7 @@ public class FaceRecognizer extends ObjectDetector {
     return super.getModelInputHeight();
   }
 
-  public String recognizeFace(Bitmap face) {
+  public boolean saveFace(Bitmap face) {
     long start = SystemClock.uptimeMillis();
     // Preprocess the image data from 0-255 int to normalized float based
     // on the provided parameters.
@@ -153,8 +137,8 @@ public class FaceRecognizer extends ObjectDetector {
 
     inferenceInterface.run(outputNames, logStats);
 
-    outputEmbedding = new float[(int) embeddingLength];
-    inferenceInterface.fetch(outputNames[0], outputEmbedding);
+    outputEmbeddings = new float[(int) embeddingLength];
+    inferenceInterface.fetch(outputNames[0], outputEmbeddings);
 
     long runTime = SystemClock.uptimeMillis() - startFeed;
     long preprocessImageTime = startFeed - start;
@@ -163,28 +147,9 @@ public class FaceRecognizer extends ObjectDetector {
     sb.append("recog preprocess: ").append(preprocessImageTime).append("ms\n")
       .append("recog run: ").append(runTime).append("ms\n");
 
-    Log.d(TAG, sb.toString());
+    dbUtils.addEmbedding(new FaceEmbedding(0, registerName, outputEmbeddings));
 
-    if (registeredEmbedding.size() == 0) {
-      return "Unknown";
-    }
-    float minDistance = embeddingDistance(outputEmbedding, registeredEmbedding.get(0).getEmbedding());
-    int minIndex = 0;
-    for (int i=0; i<registeredEmbedding.size(); i++) {
-      float distance = embeddingDistance(outputEmbedding, registeredEmbedding.get(i).getEmbedding());
-      if (minDistance > distance) {
-        minDistance = distance;
-        minIndex = i;
-      }
-    }
-
-    if (debug)
-      Log.d(TAG, "minDistance: " + minDistance);
-    if (minDistance > MAX_SAME_PERSON_DISTANCE) {
-      return "Unknown";
-    }
-
-    return registeredEmbedding.get(minIndex).getName();
+    return true;
   }
 
   @Override
@@ -192,23 +157,33 @@ public class FaceRecognizer extends ObjectDetector {
     FrameInferencerResult detectorResult = super.inferenceFrame(bitmap);
 
     List<Recognition> recognitions = detectorResult.getRecognitions();
-    for (final Recognition recog : recognitions) {
-      final RectF location = recog.getLocation();
-      if (location != null && recog.getConfidence() >= MIN_DETECTION_CONFIDENCE) {
-        assert(location.left >= 0 && location.top >= 0
-          && location.width() >= 0 && location.height() >= 0
-          && location.width() <= bitmap.getWidth()
-          && location.height() <= bitmap.getHeight()
-        );
-        Bitmap face = Bitmap.createBitmap(bitmap,
-          (int)location.left, (int)location.top, (int)location.width(), (int)location.height());
-        Bitmap scaledFace = Bitmap.createScaledBitmap(face, modelInputWidth, modelInputHeight, false);
-        if (debug)
-          ImageUtils.saveBitmap(scaledFace);
+    if (recognitions.size() == 0) return detectorResult;
 
-        // TODO: alignment
-        String people = recognizeFace(scaledFace);
-        recog.setTitle(people);
+    Recognition best = recognitions.get(0);
+
+    for (Recognition recog : recognitions) {
+      if (recog.getConfidence() > best.getConfidence())
+        best = recog;
+    }
+
+    if (best.getLocation() != null && best.getConfidence() >= MINIMUM_DETECTION_CONFIDENCE) {
+      RectF location = best.getLocation();
+      assert(location.left >= 0 && location.top >= 0
+        && location.width() >= 0 && location.height() >= 0
+        && location.width() <= bitmap.getWidth()
+        && location.height() <= bitmap.getHeight()
+      );
+      Bitmap face = Bitmap.createBitmap(bitmap,
+        (int)location.left, (int)location.top, (int)location.width(), (int)location.height());
+      Bitmap scaledFace = Bitmap.createScaledBitmap(face, modelInputWidth, modelInputHeight, false);
+      // TODO: alignment
+      boolean success = saveFace(scaledFace);
+      if (!success) {
+        Log.e(TAG, "Error saving face embedding");
+      } else {
+        Log.i(TAG, "Registered face " + this.registerName);
+        // Quit this activity if face registered
+        activity.finish();
       }
     }
 
@@ -221,15 +196,5 @@ public class FaceRecognizer extends ObjectDetector {
     super.close();
   }
 
-  private float embeddingDistance(float[] embedding1, float[] embedding2) {
-    assert(embedding1.length == embedding2.length);
-    //TODO: vectorize?
-    float l2DistanceSquare = 0;
-    for (int i=0; i< embedding1.length; ++i) {
-      float diff = embedding1[i] - embedding2[i];
-      l2DistanceSquare += diff * diff;
-    }
-    return l2DistanceSquare;
-  }
-
 }
+

@@ -277,6 +277,19 @@ public class MainActivity extends AppCompatActivity {
         160,
         160
       ));
+    modelList.add(
+      new Model(
+        8,
+        R.drawable.ic_model,
+        FaceMgmtActivity.class,
+        "face management",
+        "manage faces using the same facenet as above",
+        "facenet.pb",
+        "notused.txt",
+        160,
+        160
+      ));
+
 
     ListView lv = (ListView) findViewById(R.id.listView);
 
@@ -295,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("modelInputWidth", model.getModelInputWidth());
         intent.putExtra("modelInputHeight", model.getModelInputHeight());
 
-        if (modelId == 4 || modelId == 7) {
+        if (modelId == 4 || modelId == 7 || modelId == 8) {
           HashMap<String, String> hashMap = new HashMap<String, String>();
           hashMap.put("useFrontCamera", "true");
           intent.putExtra("extraParams", hashMap);

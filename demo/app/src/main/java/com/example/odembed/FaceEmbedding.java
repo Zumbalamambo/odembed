@@ -45,6 +45,14 @@ public class FaceEmbedding {
     this.embedding = embedding;
   }
 
+  public String getEmbeddingString() {
+    StringBuilder sb = new StringBuilder();
+    for (float f : embedding) {
+      sb.append(f).append(" ");
+    }
+    return sb.toString();
+  }
+
   public static byte[] floatArray2ByteArray(float[] values){
     ByteBuffer buffer = ByteBuffer.allocate(4 * values.length);
 

@@ -4,5 +4,6 @@
     <string name="app_name_classifier">cassifier</string>
     <string name="app_name_detector">detector</string>
     <string name="app_name_face">face recognition</string>
-
+    <string name="app_name_face_register">face register</string>
+    <string name="app_name_face_mgmt">face management</string>
 </resources>

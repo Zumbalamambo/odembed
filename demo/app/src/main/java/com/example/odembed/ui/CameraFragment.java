@@ -31,6 +31,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
+import android.support.design.widget.TextInputEditText;
 import android.support.v13.app.FragmentCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -41,8 +42,10 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.odembed.FaceRecognizer;
+import com.example.odembed.FaceRegister;
 import com.example.odembed.FrameInferencer;
 import com.example.odembed.ImageClassifier;
 import com.example.odembed.ObjectDetector;
@@ -92,11 +95,13 @@ public class CameraFragment extends Fragment
   private Semaphore cameraOpenCloseLock = new Semaphore(1);
 
   private boolean debug = false;
+  private String registerName = "";
 
   public enum CameraMode {
     CLASSIFIER,
     DETECTOR,
-    FACE
+    FACE,
+    FACE_REGISTER
   }
 
   private CameraMode cameraMode;
@@ -124,10 +129,15 @@ public class CameraFragment extends Fragment
     return theInstance;
   }
 
+  // TODO: remove this ugly code, decouple camera UI and logic
+  void setRegisterName(String name) {
+    registerName = name;
+  }
+
   @Override
   public View onCreateView(
           LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-    return inflater.inflate(R.layout.fragment_camera, container, false);
+      return inflater.inflate(R.layout.fragment_camera, container, false);
   }
 
   @Override
@@ -162,6 +172,14 @@ public class CameraFragment extends Fragment
           getActivity(), modelFile, labelFile, modelInputWidth, modelInputHeight);
       } catch (IOException e) {
         Log.e(TAG, "Failed to initialize an face recgonizer.");
+      }
+    }
+    else if (cameraMode == CameraMode.FACE_REGISTER) {
+      try {
+        inferencer = new FaceRegister(
+          getActivity(), modelFile, labelFile, modelInputWidth, modelInputHeight, registerName);
+      } catch (IOException e) {
+        Log.e(TAG, "Failed to initialize an face register.");
       }
     }
     startBackgroundThread();
@@ -214,7 +232,7 @@ public class CameraFragment extends Fragment
     super.onDestroy();
   }
 
-  private void showToast(final String text) {
+  private void showInfo(final String text) {
     final Activity activity = getActivity();
     if (activity != null) {
       activity.runOnUiThread(
@@ -224,6 +242,13 @@ public class CameraFragment extends Fragment
               textView.setText(text);
             }
           });
+    }
+  }
+
+  private void showRegisterSuccessToast(String name) {
+    final Activity activity = getActivity();
+    if (activity != null) {
+      Toast.makeText(activity, name + " registered", Toast.LENGTH_SHORT).show();
     }
   }
 
@@ -559,7 +584,7 @@ public class CameraFragment extends Fragment
 
     @Override
     public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-      showToast("Failed");
+      showInfo("Failed");
     }
   };
 
@@ -630,7 +655,9 @@ public class CameraFragment extends Fragment
     }
     textureView.setTransform(matrix);
 
-    if (cameraMode == CameraMode.DETECTOR || cameraMode == CameraMode.FACE) {
+    if (cameraMode == CameraMode.DETECTOR
+      || cameraMode == CameraMode.FACE
+      || cameraMode == CameraMode.FACE_REGISTER) {
       RectF detectRect =
           new RectF(
               0,
@@ -645,7 +672,7 @@ public class CameraFragment extends Fragment
 
   private void runInference() {
     if (inferencer == null || getActivity() == null || cameraDevice == null) {
-      showToast("Uninitialized inferencer or invalid context.");
+      showInfo("Uninitialized inferencer or invalid context.");
       return;
     }
 
@@ -664,13 +691,13 @@ public class CameraFragment extends Fragment
         stringBuilder
             .append(recog.getTitle()).append(": ").append(recog.getConfidence()).append("\n");
       }
-      showToast(
+      showInfo(
           stringBuilder.toString() +
           "Inference: " + (end - start) + "ms\n" +
           result.getInfrenceMessage());
     }
     else if (cameraMode == CameraMode.DETECTOR) {
-      showToast("Inference: " + (end - start) + "ms\n" + result.getInfrenceMessage());
+      showInfo("Inference: " + (end - start) + "ms\n" + result.getInfrenceMessage());
 
       List<Recognition> recognitions = result.getRecognitions();
       final List<Recognition> mappedRecognitions = new LinkedList<Recognition>();
@@ -685,8 +712,8 @@ public class CameraFragment extends Fragment
       }
       boxView.drawRecognition(mappedRecognitions);
     }
-    else if (cameraMode == CameraMode.FACE) {
-      showToast("Inference: " + (end - start) + "ms\n" + result.getInfrenceMessage());
+    else if (cameraMode == CameraMode.FACE || cameraMode == CameraMode.FACE_REGISTER) {
+      showInfo("Inference: " + (end - start) + "ms\n" + result.getInfrenceMessage());
 
       List<Recognition> recognitions = result.getRecognitions();
       final List<Recognition> mappedRecognitions = new LinkedList<Recognition>();

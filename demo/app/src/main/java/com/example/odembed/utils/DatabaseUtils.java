@@ -8,10 +8,12 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.example.odembed.FaceEmbedding;
 
 public class DatabaseUtils extends SQLiteOpenHelper {
+  private static final String TAG = "DatabaseUtils";
   private static final int DATABASE_VERSION = 1;
   private static final String DATABASE_NAME = "sqldb";
   private static final String TABLE_EMBEDDING = "embedding";
@@ -42,49 +44,56 @@ public class DatabaseUtils extends SQLiteOpenHelper {
     onCreate(db);
   }
 
-  void addEmbedding(FaceEmbedding embedding) {
+  public void addEmbedding(FaceEmbedding embedding) {
     SQLiteDatabase db = this.getWritableDatabase();
 
-    ContentValues values = new ContentValues();
-    values.put(KEY_NAME, embedding.getName());
-    values.put(KEY_EMBEDDING, FaceEmbedding.floatArray2ByteArray(embedding.getEmbedding()));
+    if (findEmbedding(embedding.getName()) == null) {
+      ContentValues values = new ContentValues();
+      values.put(KEY_NAME, embedding.getName());
+      values.put(KEY_EMBEDDING, FaceEmbedding.floatArray2ByteArray(embedding.getEmbedding()));
 
-    db.insert(TABLE_EMBEDDING, null, values);
+      db.insert(TABLE_EMBEDDING, null, values);
+    } else {
+      Log.w(TAG, "Trying to insert duplicate name " + embedding.getName());
+    }
     db.close();
   }
 
-  FaceEmbedding getEmbedding(int id) {
+  public FaceEmbedding getEmbedding(int id) {
     SQLiteDatabase db = this.getReadableDatabase();
 
     Cursor cursor = db.query(TABLE_EMBEDDING, new String[] { KEY_ID,
         KEY_NAME, KEY_EMBEDDING}, KEY_ID + "=?",
       new String[] { String.valueOf(id) }, null, null, null, null);
-    if (cursor != null)
-      cursor.moveToFirst();
+    if (cursor != null && cursor.moveToFirst()) {
+      FaceEmbedding embedding = new FaceEmbedding(Integer.parseInt(cursor.getString(0)),
+        cursor.getString(1), cursor.getBlob(2));
 
-    FaceEmbedding embedding = new FaceEmbedding(Integer.parseInt(cursor.getString(0)),
-      cursor.getString(1), cursor.getBlob(2));
-
-    return embedding;
+      return embedding;
+    } else {
+      return null;
+    }
   }
 
-  FaceEmbedding findEmbedding(String name) {
+  public FaceEmbedding findEmbedding(String name) {
     SQLiteDatabase db = this.getReadableDatabase();
 
     Cursor cursor = db.query(TABLE_EMBEDDING, new String[] { KEY_ID,
         KEY_NAME, KEY_EMBEDDING}, KEY_NAME + "=?",
       new String[] { name }, null, null, null, null);
-    if (cursor != null)
-      cursor.moveToFirst();
 
-    FaceEmbedding embedding = new FaceEmbedding(Integer.parseInt(cursor.getString(0)),
-      cursor.getString(1), cursor.getBlob(2));
+    if (cursor != null && cursor.moveToFirst()) {
+      FaceEmbedding embedding = new FaceEmbedding(Integer.parseInt(cursor.getString(0)),
+        cursor.getString(1), cursor.getBlob(2));
 
-    return embedding;
+      return embedding;
+    } else {
+      return null;
+    }
   }
 
-  public List<FaceEmbedding> getAllEmbeddings() {
-    List<FaceEmbedding> embeddings = new ArrayList<FaceEmbedding>();
+  public ArrayList<FaceEmbedding> getAllEmbeddings() {
+    ArrayList<FaceEmbedding> embeddings = new ArrayList<FaceEmbedding>();
     String selectQuery = "SELECT  * FROM " + TABLE_EMBEDDING;
 
     SQLiteDatabase db = this.getWritableDatabase();

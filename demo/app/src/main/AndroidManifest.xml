@@ -38,7 +38,16 @@
         <activity
             android:name=".ui.FaceActivity"
             android:label="@string/app_name_face"
-            android:theme="@style/MaterialTheme"/>
+            android:theme="@style/MaterialTheme" />
+        <activity
+            android:name=".ui.FaceRegisterActivity"
+            android:label="@string/app_name_face_register"
+            android:theme="@style/MaterialTheme" />
+        <activity
+            android:name=".ui.FaceMgmtActivity"
+            android:label="@string/app_name_face_mgmt"
+            android:theme="@style/Theme.AppCompat"
+            android:windowSoftInputMode="stateHidden" />
     </application>
 
 </manifest>
