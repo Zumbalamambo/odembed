@@ -29,7 +29,7 @@ public class ImageUtils {
   public static void saveBitmap(final Bitmap bitmap, final String filename) {
     final String root =
         Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "odembed";
-    Log.i(TAG, "Saving %dx%d bitmap to " + bitmap.getWidth() + ", " + bitmap.getHeight() + root);
+    Log.i(TAG, "Saving " + bitmap.getWidth() + "x" +bitmap.getHeight() + " bitmap to " + root);
     final File myDir = new File(root);
 
     if (!myDir.mkdirs()) {
